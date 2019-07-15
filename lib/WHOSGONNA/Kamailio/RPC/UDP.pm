@@ -52,6 +52,13 @@ sub _build__sock {
 }
 
 
+## Maximum length for UDP response.  Set at 10,000 for now.  How do we know?
+has max_udp_resp => (
+    is      => 'rw',
+    writer  => 'set_max_udp_resp',
+    default => 10_000,
+);
+
 ## A counter for the RPC request
 has _rpc_id => (
     is => 'rwp',
@@ -63,6 +70,7 @@ has _request_hr => (
     is  => 'rwp',
     isa => HashRef
 );
+
 sub _make_request_hr {
     my $self   = shift;
     my $method = shift or die 'No method passed to request';
@@ -81,10 +89,53 @@ sub _make_request_hr {
 }
 
 
+has request_json => (
+    is  => 'rwp'
+);
+
+has _resp => (
+    is => 'rwp'
+);
+
+
+
 sub request {
     my $self = shift;
     my @args = @_;
+
     $self->_make_request_hr(@_);
+    $self->_set_request_json( encode_json( $self->_request_hr ) );
+    
+    my $resp;
+
+    $self->_sock->send(
+        $self->request_json
+    ) or die "Send error: $!\n";
+
+    $self->_sock->recv(
+        $resp, $self->max_udp_resp
+    );
+
+    $self->_set__resp($resp);
+
+    $self->_set__rpc_id( $self->_rpc_id + 1 );
+
+    return $self->result;
+}
+
+sub result {
+    my $self   = shift;
+    my $resp   = $self->resp;
+    my $result = $resp->{result};
+    return $result;
+}
+
+sub resp {
+    my $self = shift;
+    my $resp = decode_json( $self->_resp ) 
+        or die ("Failure decoding json: $!");
+
+    return $resp;
 }
 
 1;

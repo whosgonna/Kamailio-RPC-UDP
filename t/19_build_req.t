@@ -14,7 +14,7 @@ my $req_hr = {
     ]
 }; 
 
-$rpc->request(qw(mod.stats all shm));
+my $resp = $rpc->request(qw(mod.stats all shm));
 
 
 is_deeply(
@@ -22,6 +22,9 @@ is_deeply(
     $req_hr,
     'Request hashref build correctly'
 );
+
+use Data::Printer;
+p $resp;
 
 
 done_testing;
