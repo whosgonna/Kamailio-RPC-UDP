@@ -23,8 +23,8 @@ is_deeply(
     'Request hashref build correctly'
 );
 
-use Data::Printer;
-p $resp;
+#use Data::Printer;
+#p $resp;
 
 
 done_testing;
